@@ -1,4 +1,10 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <fcntl.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -11,13 +17,13 @@ bool do_system(const char *cmd)
 {
 
 /*
- * TODO  add your code here
  *  Call the system() function with the command set in the cmd
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-
-    return true;
+    int status = system(cmd);
+    printf("\"%s\" exited (%d) with %d, status %d\n", cmd, WIFEXITED(status), status, WEXITSTATUS(status));
+    return status == 0;
 }
 
 /**
@@ -45,9 +51,6 @@ bool do_exec(int count, ...)
         command[i] = va_arg(args, char *);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
 
 /*
  * TODO:
@@ -58,10 +61,37 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    int    wstatus;
+    pid_t  cpid;
+    bool   result = false;
+
+    cpid = fork();
+    if (cpid == -1) {
+        perror("fork");
+        goto end_do_exec;
+    }
+
+    if (cpid == 0) {            /* Code executed by child */
+        printf("Child PID is %jd\n", (intmax_t) getpid());
+        int exec_status = execv(command[0], command);
+        printf("Child failed %d (%d)\n", exec_status, result);
+        exit(EXIT_FAILURE);
+    }
+    else {
+        if (waitpid (cpid, &wstatus, 0) == -1) {
+            goto end_do_exec;
+        }
+        else if (WIFEXITED(wstatus)) {
+            result = WEXITSTATUS(wstatus) == 0;
+            printf("Parent: Child Exited %d %d\n", wstatus, WEXITSTATUS(wstatus));
+        }
+    }
+    end_do_exec:
 
     va_end(args);
 
-    return true;
+    printf("Parent do_exec: %d\n", result);
+    return result;
 }
 
 /**
@@ -80,10 +110,6 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         command[i] = va_arg(args, char *);
     }
     command[count] = NULL;
-    // this line is to avoid a compile warning before your implementation is complete
-    // and may be removed
-    command[count] = command[count];
-
 
 /*
  * TODO
@@ -92,8 +118,49 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    int    wstatus;
+    pid_t  cpid;
+    bool   result = false;
+
+    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    if (fd < 0) { 
+        perror("open");
+        goto end_no_file;
+    }
+
+    cpid = fork();
+    if (cpid == -1) {
+        perror("fork");
+        goto end;
+    }
+
+    if (cpid == 0) {            /* Code executed by child */
+        printf("Child PID is %jd\n", (intmax_t) getpid());
+        int dup_fd = dup2(fd, STDOUT_FILENO);
+        if (dup_fd < 0) {
+            perror("Could not dup2 stdout");
+            exit(EXIT_FAILURE);
+        }
+        int exec_status = execv(command[0], command);
+        printf("Child failed %d\n", exec_status);
+        exit(EXIT_FAILURE);
+    } 
+    
+    if (waitpid (cpid, &wstatus, 0) == -1) {
+        goto end;
+    }
+    else if (WIFEXITED(wstatus)) {
+        result = WEXITSTATUS(wstatus) == 0;
+    }
+
+    
+    end:
+
+    close(fd);
+    
+    end_no_file:
 
     va_end(args);
 
-    return true;
+    return result;
 }
