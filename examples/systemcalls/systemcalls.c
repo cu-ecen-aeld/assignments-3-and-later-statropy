@@ -22,7 +22,6 @@ bool do_system(const char *cmd)
  *   or false() if it returned a failure
 */
     int status = system(cmd);
-    printf("\"%s\" exited (%d) with %d, status %d\n", cmd, WIFEXITED(status), status, WEXITSTATUS(status));
     return status == 0;
 }
 
@@ -53,7 +52,6 @@ bool do_exec(int count, ...)
     command[count] = NULL;
 
 /*
- * TODO:
  *   Execute a system command by calling fork, execv(),
  *   and wait instead of system (see LSP page 161).
  *   Use the command[0] as the full path to the command to execute
@@ -67,14 +65,12 @@ bool do_exec(int count, ...)
 
     cpid = fork();
     if (cpid == -1) {
-        perror("fork");
         goto end_do_exec;
     }
 
     if (cpid == 0) {            /* Code executed by child */
-        printf("Child PID is %jd\n", (intmax_t) getpid());
-        int exec_status = execv(command[0], command);
-        printf("Child failed %d (%d)\n", exec_status, result);
+        execv(command[0], command);
+        // if execv returns, it failed
         exit(EXIT_FAILURE);
     }
     else {
@@ -83,14 +79,12 @@ bool do_exec(int count, ...)
         }
         else if (WIFEXITED(wstatus)) {
             result = WEXITSTATUS(wstatus) == 0;
-            printf("Parent: Child Exited %d %d\n", wstatus, WEXITSTATUS(wstatus));
         }
     }
     end_do_exec:
 
     va_end(args);
 
-    printf("Parent do_exec: %d\n", result);
     return result;
 }
 
@@ -112,7 +106,6 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
 
 /*
- * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
  *   redirect standard out to a file specified by outputfile.
  *   The rest of the behaviour is same as do_exec()
@@ -124,25 +117,21 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 
     int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
     if (fd < 0) { 
-        perror("open");
         goto end_no_file;
     }
 
     cpid = fork();
     if (cpid == -1) {
-        perror("fork");
         goto end;
     }
 
     if (cpid == 0) {            /* Code executed by child */
-        printf("Child PID is %jd\n", (intmax_t) getpid());
         int dup_fd = dup2(fd, STDOUT_FILENO);
         if (dup_fd < 0) {
-            perror("Could not dup2 stdout");
             exit(EXIT_FAILURE);
         }
-        int exec_status = execv(command[0], command);
-        printf("Child failed %d\n", exec_status);
+        execv(command[0], command);
+        // if execv returns, it failed
         exit(EXIT_FAILURE);
     } 
     
