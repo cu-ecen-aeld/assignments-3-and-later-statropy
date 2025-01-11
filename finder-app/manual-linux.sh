@@ -35,11 +35,11 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     echo "Checking out version ${KERNEL_VERSION}"
     git checkout ${KERNEL_VERSION}
 
-    make -j 12 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
-    make -j 12 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
-    make -j 12 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
-    make -j 12 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
-    make -j 12 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
+    make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
+    make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
+    make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
+    make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
+    make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
 fi
 
 echo "Adding the Image in outdir"
@@ -71,7 +71,7 @@ fi
 
 make distclean
 make defconfig
-make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+make -j $(nproc) ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
 cd "$OUTDIR"/rootfs
