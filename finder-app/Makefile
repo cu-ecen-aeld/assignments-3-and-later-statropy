@@ -21,6 +21,8 @@ OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 PKG_CONFIG	?= $(CROSS_COMPILE)pkg-config
 
+all: writer
+
 writer : writer.o
 
 writer.o : writer.c
