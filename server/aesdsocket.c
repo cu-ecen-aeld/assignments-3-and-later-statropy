@@ -144,8 +144,14 @@ void start_daemon(void)
     }
 
     open("/dev/null", O_RDWR);
-    dup(0);
-    dup(0);
+    if (dup(0) == -1)
+    {
+        exit_error("Could not redirect stdout");
+    }
+    if (dup(0) == -1)
+    {
+        exit_error("Could not redirect stderr");
+    }
 }
 
 int main(int argc, char *argv[])
