@@ -10,17 +10,17 @@ CROSS_COMPILE := $(subst ",,$(CROSS_COMPILE))
 #")
 endif
 
-AS		= $(CROSS_COMPILE)as
-CC		= $(CROSS_COMPILE)gcc
-LD		= $(CC) -nostdlib
-CPP		= $(CC) -E
-AR		= $(CROSS_COMPILE)ar
-NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+AS		?= $(CROSS_COMPILE)as
+CC		?= $(CROSS_COMPILE)gcc
+LD		?= $(CC) -nostdlib
+CPP		?= $(CC) -E
+AR		?= $(CROSS_COMPILE)ar
+NM		?= $(CROSS_COMPILE)nm
+STRIP		?= $(CROSS_COMPILE)strip
+OBJCOPY		?= $(CROSS_COMPILE)objcopy
+OBJDUMP		?= $(CROSS_COMPILE)objdump
 PKG_CONFIG	?= $(CROSS_COMPILE)pkg-config
-CFLAGS = -Wall -Werror -g3 -I.
+CFLAGS ?= -Wall -Werror -g3 -I.
 
 all: aesdsocket
 
